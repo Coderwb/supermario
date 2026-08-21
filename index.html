@@ -1,0 +1,1779 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Super Mario USB Edition</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: #050510;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    color: white;
+    font-family: Arial, sans-serif;
+    overflow: hidden;
+}
+
+canvas {
+    border: 4px solid white;
+    box-shadow:
+        0 0 15px #00ffff,
+        0 0 40px #5c00ff;
+    max-width: 96vw;
+    max-height: 78vh;
+}
+
+#info {
+    position: absolute;
+    top: 12px;
+    font-size: 21px;
+    font-weight: bold;
+    text-shadow: 2px 2px 5px black;
+    z-index: 5;
+    text-align: center;
+}
+
+#help {
+    position: absolute;
+    bottom: 8px;
+    font-size: 14px;
+    text-shadow: 2px 2px 5px black;
+}
+
+/* ================= PASSWORD ================= */
+
+#passwordScreen {
+    position: fixed;
+    inset: 0;
+    background: #050510;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+#passwordBox {
+    background: white;
+    color: black;
+    padding: 30px;
+    border-radius: 18px;
+    text-align: center;
+    width: 330px;
+    box-shadow:
+        0 0 30px #00ffff,
+        0 0 60px #5c00ff;
+}
+
+#passwordBox h1 {
+    margin-top: 0;
+}
+
+#passwordInput {
+    width: 90%;
+    padding: 12px;
+    font-size: 18px;
+    border: 2px solid #777;
+    border-radius: 8px;
+    margin: 10px;
+}
+
+#passwordButton {
+    padding: 12px 25px;
+    border: 0;
+    border-radius: 8px;
+    background: #27ae60;
+    color: white;
+    font-size: 17px;
+    cursor: pointer;
+}
+
+#passwordError {
+    color: red;
+    font-weight: bold;
+}
+
+#game {
+    display: none;
+}
+
+/* ================= DÖD ================= */
+
+#deathScreen {
+    position: fixed;
+    inset: 0;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+    text-align: center;
+    background: rgba(180, 0, 0, 0.78);
+    animation: deathFlash 0.25s infinite alternate;
+}
+
+@keyframes deathFlash {
+    from {
+        background: rgba(180, 0, 0, 0.65);
+    }
+    to {
+        background: rgba(255, 0, 0, 0.9);
+    }
+}
+
+.bigText {
+    font-size: 65px;
+    font-weight: bold;
+    text-shadow: 4px 4px 10px black;
+}
+
+.smallText {
+    font-size: 25px;
+}
+
+/* ================= STENRUM ================= */
+
+#stoneScreen {
+    position: fixed;
+    inset: 0;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+    text-align: center;
+    background: rgba(10, 10, 15, 0.96);
+}
+
+/* ================= TROFÉ ================= */
+
+#trophyScreen {
+    position: fixed;
+    inset: 0;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 200;
+    text-align: center;
+    background: rgba(0, 0, 0, 0.94);
+}
+
+.trophy {
+    font-size: 130px;
+    animation: trophyFloat 1.5s infinite alternate;
+}
+
+@keyframes trophyFloat {
+    from {
+        transform: translateY(0) rotate(-3deg);
+    }
+    to {
+        transform: translateY(-20px) rotate(3deg);
+    }
+}
+
+#finalButton {
+    padding: 14px 30px;
+    font-size: 20px;
+    border: 0;
+    border-radius: 10px;
+    cursor: pointer;
+}
+</style>
+</head>
+
+<body>
+
+<!-- ================= LÖSENORD ================= -->
+
+<div id="passwordScreen">
+
+    <div id="passwordBox">
+
+        <h1>🔒 SPELET ÄR LÅST</h1>
+
+        <p>Skriv lösenordet för att spela.</p>
+
+        <input
+            id="passwordInput"
+            type="password"
+            placeholder="Lösenord"
+            autocomplete="off"
+        >
+
+        <br>
+
+        <button id="passwordButton">
+            ÖPPNA SPELET
+        </button>
+
+        <p id="passwordError"></p>
+
+    </div>
+
+</div>
+
+
+<!-- ================= SPELET ================= -->
+
+<div id="game">
+
+    <div id="info">
+
+        NIVÅ:
+        <span id="levelDisplay">1</span>
+        / 20
+
+        |
+
+        HASTIGHET:
+        <span id="speedDisplay">7</span>
+
+        |
+
+        🔥 AKTA LAVAN!
+
+    </div>
+
+    <canvas
+        id="gameCanvas"
+        width="800"
+        height="400">
+    </canvas>
+
+    <div id="help">
+
+        ← → / A D = gå
+        &nbsp; | &nbsp;
+        SPACE / W / ↑ = hoppa
+
+    </div>
+
+</div>
+
+
+<!-- ================= DÖD ================= -->
+
+<div id="deathScreen">
+
+    <div>
+
+        <div class="bigText">
+            💥 DU DOG! 💥
+        </div>
+
+        <div class="smallText">
+
+            🔥 LAVAN VANN DEN HÄR GÅNGEN!
+
+            <br><br>
+
+            Försök igen...
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- ================= HEMLIGT STENRUM ================= -->
+
+<div id="stoneScreen">
+
+    <div>
+
+        <div class="bigText">
+            🪨 HEMLIGT STENRUM 🪨
+        </div>
+
+        <div class="smallText">
+
+            Du hittade den hemliga vägen!
+
+            <br>
+
+            Nu börjar den sista utmaningen...
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- ================= TROFÉ ================= -->
+
+<div id="trophyScreen">
+
+    <div>
+
+        <div class="trophy">
+            🏆
+        </div>
+
+        <div class="bigText">
+            DU KLARADE SPELET!
+        </div>
+
+        <div class="smallText">
+
+            Du klarade den hemliga stenutmaningen!
+
+            <br><br>
+
+            👑 DU ÄR EN RIKTIG LAVA-KUNG! 👑
+
+        </div>
+
+        <br>
+
+        <button id="finalButton">
+            SPELA IGEN
+        </button>
+
+    </div>
+
+</div>
+
+
+<script>
+
+/* =====================================================
+   LÖSENORD
+===================================================== */
+
+const CORRECT_PASSWORD = "Aron";
+
+const passwordScreen =
+    document.getElementById("passwordScreen");
+
+const passwordInput =
+    document.getElementById("passwordInput");
+
+const passwordButton =
+    document.getElementById("passwordButton");
+
+const passwordError =
+    document.getElementById("passwordError");
+
+const game =
+    document.getElementById("game");
+
+
+function checkPassword() {
+
+    if (passwordInput.value === CORRECT_PASSWORD) {
+
+        passwordScreen.style.display = "none";
+
+        game.style.display = "block";
+
+        startGame();
+
+    } else {
+
+        passwordError.innerText =
+            "❌ Fel lösenord!";
+
+        passwordInput.value = "";
+
+        passwordInput.focus();
+
+    }
+
+}
+
+
+passwordButton.addEventListener(
+    "click",
+    checkPassword
+);
+
+
+passwordInput.addEventListener(
+    "keydown",
+    function(e) {
+
+        if (e.key === "Enter") {
+
+            checkPassword();
+
+        }
+
+    }
+);
+
+
+/* =====================================================
+   CANVAS
+===================================================== */
+
+const canvas =
+    document.getElementById("gameCanvas");
+
+const ctx =
+    canvas.getContext("2d");
+
+
+/* =====================================================
+   BAKGRUNDSBILD
+===================================================== */
+
+const backgroundImage = new Image();
+
+backgroundImage.src = "grun.png";
+
+
+/* =====================================================
+   MARIO
+===================================================== */
+
+const marioImage = new Image();
+
+marioImage.src = "mario.png";
+
+
+let mario = {
+
+    x: 20,
+
+    y: 150,
+
+    width: 45,
+
+    height: 45,
+
+    /* ALLTID 7 */
+
+    speed: 7,
+
+    velY: 0,
+
+    jumping: false
+
+};
+
+
+let gravity = 0.6;
+
+let keys = {};
+
+let currentLevel = 1;
+
+let gameStarted = false;
+
+let dying = false;
+
+let secretRoom = false;
+
+let secretRoomStarted = false;
+
+let trophyWon = false;
+
+
+/* =====================================================
+   HASTIGHET
+===================================================== */
+
+function updateSpeed() {
+
+    /* Hastigheten är ALLTID 7 */
+
+    mario.speed = 7;
+
+    document.getElementById(
+        "speedDisplay"
+    ).innerText = "7";
+
+}
+
+
+/* =====================================================
+   MÅL
+===================================================== */
+
+let goal = {
+
+    x: 740,
+
+    y: 240,
+
+    width: 30,
+
+    height: 80,
+
+    color: "#2ecc71"
+
+};
+
+
+/* =====================================================
+   LAVA
+===================================================== */
+
+const lavaFloor = {
+
+    x: 0,
+
+    y: 380,
+
+    width: 800,
+
+    height: 20,
+
+    color: "#e74c3c"
+
+};
+
+
+/* =====================================================
+   NIVÅ 1–10
+===================================================== */
+
+const levels = {
+
+1: [
+    {x:0,y:320,width:150,height:60,color:"#fcb47c"},
+    {x:250,y:270,width:140,height:32,color:"#fc9838"},
+    {x:480,y:220,width:140,height:32,color:"#fc9838"},
+    {x:680,y:320,width:120,height:60,color:"#fcb47c"}
+],
+
+2: [
+    {x:0,y:320,width:100,height:60,color:"#fcb47c"},
+    {x:180,y:260,width:110,height:25,color:"#fc9838"},
+    {x:360,y:200,width:110,height:25,color:"#fc9838"},
+    {x:540,y:260,width:110,height:25,color:"#fc9838"},
+    {x:700,y:320,width:100,height:60,color:"#fcb47c"}
+],
+
+3: [
+    {x:0,y:320,width:100,height:60,color:"#fcb47c"},
+    {x:160,y:270,width:80,height:20,color:"#fc9838"},
+    {x:290,y:210,width:80,height:20,color:"#fc9838"},
+    {x:420,y:150,width:80,height:20,color:"#fc9838"},
+    {x:550,y:230,width:80,height:20,color:"#fc9838"},
+    {x:680,y:320,width:120,height:60,color:"#fcb47c"}
+],
+
+4: [
+    {x:0,y:320,width:80,height:60,color:"#fcb47c"},
+    {x:140,y:250,width:60,height:20,color:"#fc9838"},
+    {x:270,y:190,width:60,height:20,color:"#fc9838"},
+    {x:400,y:240,width:60,height:20,color:"#fc9838"},
+    {x:530,y:180,width:60,height:20,color:"#fc9838"},
+    {x:660,y:260,width:60,height:20,color:"#fc9838"},
+    {x:740,y:320,width:60,height:60,color:"#fcb47c"}
+],
+
+5: [
+    {x:0,y:320,width:60,height:60,color:"#fcb47c"},
+    {x:100,y:260,width:40,height:15,color:"#fc9838"},
+    {x:190,y:210,width:40,height:15,color:"#fc9838"},
+    {x:280,y:160,width:40,height:15,color:"#fc9838"},
+    {x:380,y:130,width:40,height:15,color:"#fc9838"},
+    {x:480,y:180,width:40,height:15,color:"#fc9838"},
+    {x:570,y:230,width:40,height:15,color:"#fc9838"},
+    {x:660,y:170,width:40,height:15,color:"#fc9838"},
+    {x:740,y:120,width:60,height:15,color:"#fcb47c"}
+],
+
+6: [
+    {x:0,y:320,width:70,height:60,color:"#fcb47c"},
+    {x:120,y:280,width:50,height:18,color:"#fc9838"},
+    {x:220,y:230,width:50,height:18,color:"#fc9838"},
+    {x:320,y:280,width:50,height:18,color:"#fc9838"},
+    {x:420,y:210,width:50,height:18,color:"#fc9838"},
+    {x:520,y:260,width:50,height:18,color:"#fc9838"},
+    {x:620,y:190,width:50,height:18,color:"#fc9838"},
+    {x:730,y:320,width:70,height:60,color:"#fcb47c"}
+],
+
+7: [
+    {x:0,y:320,width:80,height:60,color:"#fcb47c"},
+    {x:130,y:270,width:45,height:18,color:"#fc9838"},
+    {x:210,y:200,width:45,height:18,color:"#fc9838"},
+    {x:300,y:140,width:45,height:18,color:"#fc9838"},
+    {x:390,y:200,width:45,height:18,color:"#fc9838"},
+    {x:480,y:270,width:45,height:18,color:"#fc9838"},
+    {x:570,y:210,width:45,height:18,color:"#fc9838"},
+    {x:660,y:150,width:45,height:18,color:"#fc9838"},
+    {x:740,y:320,width:60,height:60,color:"#fcb47c"}
+],
+
+8: [
+    {x:0,y:320,width:60,height:60,color:"#fcb47c"},
+    {x:100,y:290,width:45,height:15,color:"#fc9838"},
+    {x:180,y:240,width:45,height:15,color:"#fc9838"},
+    {x:260,y:190,width:45,height:15,color:"#fc9838"},
+    {x:340,y:240,width:45,height:15,color:"#fc9838"},
+    {x:420,y:290,width:45,height:15,color:"#fc9838"},
+    {x:500,y:230,width:45,height:15,color:"#fc9838"},
+    {x:580,y:170,width:45,height:15,color:"#fc9838"},
+    {x:660,y:110,width:45,height:15,color:"#fc9838"},
+    {x:740,y:70,width:60,height:15,color:"#fcb47c"}
+],
+
+9: [
+    {x:0,y:320,width:70,height:60,color:"#fcb47c"},
+    {x:110,y:250,width:35,height:15,color:"#fc9838"},
+    {x:190,y:180,width:35,height:15,color:"#fc9838"},
+    {x:270,y:250,width:35,height:15,color:"#fc9838"},
+    {x:350,y:160,width:35,height:15,color:"#fc9838"},
+    {x:430,y:240,width:35,height:15,color:"#fc9838"},
+    {x:510,y:140,width:35,height:15,color:"#fc9838"},
+    {x:590,y:220,width:35,height:15,color:"#fc9838"},
+    {x:670,y:130,width:35,height:15,color:"#fc9838"},
+    {x:750,y:320,width:50,height:60,color:"#fcb47c"}
+],
+
+10: [
+    {x:0,y:320,width:60,height:60,color:"#fcb47c"},
+    {x:90,y:270,width:40,height:15,color:"#fc9838"},
+    {x:160,y:210,width:40,height:15,color:"#fc9838"},
+    {x:230,y:150,width:40,height:15,color:"#fc9838"},
+    {x:300,y:210,width:40,height:15,color:"#fc9838"},
+    {x:370,y:270,width:40,height:15,color:"#fc9838"},
+    {x:440,y:210,width:40,height:15,color:"#fc9838"},
+    {x:510,y:150,width:40,height:15,color:"#fc9838"},
+    {x:580,y:210,width:40,height:15,color:"#fc9838"},
+    {x:650,y:270,width:40,height:15,color:"#fc9838"},
+    {x:740,y:320,width:60,height:60,color:"#fcb47c"}
+]
+
+};
+
+
+/* =====================================================
+   NIVÅ 11–20
+===================================================== */
+
+for (let n = 11; n <= 20; n++) {
+
+    let arr = [];
+
+    arr.push({
+        x: 0,
+        y: 320,
+        width: 45,
+        height: 60,
+        color: "#fcb47c"
+    });
+
+    let count =
+        11 + Math.floor((n - 11) / 2);
+
+    for (let i = 0; i < count; i++) {
+
+        let x =
+            70 +
+            i * (650 / count);
+
+        let y =
+            260 -
+            Math.sin(i * 1.4) * 90;
+
+        y =
+            Math.max(
+                60,
+                Math.min(280, y)
+            );
+
+        arr.push({
+
+            x: x,
+
+            y: y,
+
+            width:
+                Math.max(
+                    22,
+                    34 - (n - 11)
+                ),
+
+            height: 11,
+
+            color: "#fc9838"
+
+        });
+
+    }
+
+    arr.push({
+
+        x: 750,
+
+        y: 50 + ((n % 3) * 20),
+
+        width: 50,
+
+        height: 12,
+
+        color: "#fcb47c"
+
+    });
+
+    levels[n] = arr;
+
+}
+
+
+/* =====================================================
+   PLATTFORMAR
+===================================================== */
+
+let platforms =
+    [...levels[currentLevel], lavaFloor];
+
+
+/* =====================================================
+   MÅLPOSITION
+===================================================== */
+
+function updateGoalPosition() {
+
+    if (currentLevel === 20) {
+
+        goal.x = 760;
+
+        goal.y = 0;
+
+    } else {
+
+        let last =
+            levels[currentLevel]
+            [levels[currentLevel].length - 1];
+
+        goal.x =
+            last.x +
+            last.width / 2 -
+            15;
+
+        goal.y =
+            last.y -
+            80;
+
+    }
+
+}
+
+
+/* =====================================================
+   RESET
+===================================================== */
+
+function resetPlayer() {
+
+    mario.x = 20;
+
+    mario.y = 150;
+
+    mario.velY = 0;
+
+    mario.jumping = false;
+
+}
+
+
+/* =====================================================
+   DÖDSANIMATION
+===================================================== */
+
+function deathAnimation() {
+
+    if (dying)
+        return;
+
+    dying = true;
+
+    document.getElementById(
+        "deathScreen"
+    ).style.display = "flex";
+
+    setTimeout(function() {
+
+        document.getElementById(
+            "deathScreen"
+        ).style.display = "none";
+
+        dying = false;
+
+        /*
+        MAN BÖRJAR OM SAMMA NIVÅ
+        */
+
+        resetPlayer();
+
+    }, 1800);
+
+}
+
+
+/* =====================================================
+   HEMLIGT STENRUM
+===================================================== */
+
+function enterSecretRoom() {
+
+    if (secretRoomStarted)
+        return;
+
+    secretRoomStarted = true;
+
+    secretRoom = true;
+
+    document.getElementById(
+        "stoneScreen"
+    ).style.display = "flex";
+
+    setTimeout(function() {
+
+        document.getElementById(
+            "stoneScreen"
+        ).style.display = "none";
+
+    }, 1800);
+
+    mario.x = 60;
+
+    mario.y = 300;
+
+    mario.velY = 0;
+
+}
+
+
+/* =====================================================
+   KONTROLLER
+===================================================== */
+
+window.addEventListener(
+    "keydown",
+    function(e) {
+
+        keys[e.code] = true;
+
+        if (
+            e.code === "Space" ||
+            e.code === "ArrowUp" ||
+            e.code === "ArrowDown" ||
+            e.code === "ArrowLeft" ||
+            e.code === "ArrowRight"
+        ) {
+
+            e.preventDefault();
+
+        }
+
+    }
+);
+
+
+window.addEventListener(
+    "keyup",
+    function(e) {
+
+        keys[e.code] = false;
+
+    }
+);
+
+
+/* =====================================================
+   NÄSTA NIVÅ
+===================================================== */
+
+function nextLevel() {
+
+    if (currentLevel < 20) {
+
+        currentLevel++;
+
+        document.getElementById(
+            "levelDisplay"
+        ).innerText =
+            currentLevel;
+
+        /*
+        HASTIGHETEN ÄR FORTFARANDE 7
+        */
+
+        updateSpeed();
+
+        platforms =
+            [...levels[currentLevel], lavaFloor];
+
+        updateGoalPosition();
+
+        resetPlayer();
+
+    } else {
+
+        /*
+        NÅR MAN NÅR MÅLET PÅ NIVÅ 20
+        GÅR MAN VIDARE TILL HEMLIGT RUM
+        */
+
+        enterSecretRoom();
+
+    }
+
+}
+
+
+/* =====================================================
+   VINN STENRUM
+===================================================== */
+
+function winSecretRoom() {
+
+    if (trophyWon)
+        return;
+
+    trophyWon = true;
+
+    document.getElementById(
+        "trophyScreen"
+    ).style.display = "flex";
+
+}
+
+
+/* =====================================================
+   SPELA IGEN
+===================================================== */
+
+document.getElementById(
+    "finalButton"
+).addEventListener(
+    "click",
+    function() {
+
+        location.reload();
+
+    }
+);
+
+
+/* =====================================================
+   UPDATE
+===================================================== */
+
+function update() {
+
+    if (dying)
+        return;
+
+
+    /* =================================================
+       HEMLIGT STENRUM
+    ================================================= */
+
+    if (secretRoom) {
+
+        if (
+            keys["ArrowLeft"] ||
+            keys["KeyA"]
+        ) {
+
+            mario.x -= mario.speed;
+
+        }
+
+        if (
+            keys["ArrowRight"] ||
+            keys["KeyD"]
+        ) {
+
+            mario.x += mario.speed;
+
+        }
+
+        if (
+            (
+                keys["Space"] ||
+                keys["ArrowUp"] ||
+                keys["KeyW"]
+            ) &&
+            !mario.jumping
+        ) {
+
+            mario.velY = -12;
+
+            mario.jumping = true;
+
+        }
+
+        mario.velY += gravity;
+
+        mario.y += mario.velY;
+
+
+        let stonePlatforms = [
+
+            {
+                x: 0,
+                y: 345,
+                width: 150,
+                height: 55
+            },
+
+            {
+                x: 190,
+                y: 290,
+                width: 80,
+                height: 20
+            },
+
+            {
+                x: 310,
+                y: 240,
+                width: 80,
+                height: 20
+            },
+
+            {
+                x: 430,
+                y: 190,
+                width: 80,
+                height: 20
+            },
+
+            {
+                x: 550,
+                y: 240,
+                width: 80,
+                height: 20
+            },
+
+            {
+                x: 680,
+                y: 150,
+                width: 120,
+                height: 20
+            }
+
+        ];
+
+
+        for (
+            let p of stonePlatforms
+        ) {
+
+            if (
+                mario.x <
+                    p.x + p.width &&
+
+                mario.x +
+                    mario.width >
+                    p.x &&
+
+                mario.y +
+                    mario.height >
+                    p.y &&
+
+                mario.y +
+                    mario.height -
+                    mario.velY <=
+                    p.y
+            ) {
+
+                mario.y =
+                    p.y -
+                    mario.height;
+
+                mario.velY = 0;
+
+                mario.jumping = false;
+
+            }
+
+        }
+
+
+        /*
+        TROFÉN FINNS LÄNGST UPP
+        */
+
+        if (
+            mario.x > 700 &&
+            mario.y < 160
+        ) {
+
+            winSecretRoom();
+
+        }
+
+
+        /*
+        RAMLAR MAN NER I STENRUMMET
+        */
+
+        if (mario.y > 420) {
+
+            mario.x = 60;
+
+            mario.y = 300;
+
+            mario.velY = 0;
+
+        }
+
+
+        if (mario.x < 0)
+            mario.x = 0;
+
+
+        if (
+            mario.x >
+            canvas.width -
+            mario.width
+        ) {
+
+            mario.x =
+                canvas.width -
+                mario.width;
+
+        }
+
+
+        return;
+
+    }
+
+
+    /* =================================================
+       VANLIG BANA
+    ================================================= */
+
+    if (
+        keys["ArrowLeft"] ||
+        keys["KeyA"]
+    ) {
+
+        mario.x -= mario.speed;
+
+    }
+
+
+    if (
+        keys["ArrowRight"] ||
+        keys["KeyD"]
+    ) {
+
+        mario.x += mario.speed;
+
+    }
+
+
+    if (
+        (
+            keys["ArrowUp"] ||
+            keys["Space"] ||
+            keys["KeyW"]
+        ) &&
+        !mario.jumping
+    ) {
+
+        mario.velY = -12;
+
+        mario.jumping = true;
+
+    }
+
+
+    mario.velY += gravity;
+
+    mario.y += mario.velY;
+
+
+    /* =================================================
+       KOLLISION
+    ================================================= */
+
+    for (
+        let plat of platforms
+    ) {
+
+        if (
+            mario.x <
+                plat.x + plat.width &&
+
+            mario.x +
+                mario.width >
+                plat.x &&
+
+            mario.y +
+                mario.height >
+                plat.y &&
+
+            mario.y +
+                mario.height -
+                mario.velY <=
+                plat.y
+        ) {
+
+
+            /* ================= LAVA ================= */
+
+            if (
+                plat.color === "#e74c3c"
+            ) {
+
+                /*
+                PÅ NIVÅ 20:
+                LAVAN ÄR DEN HEMLIGA VÄGEN
+                */
+
+                if (
+                    currentLevel === 20
+                ) {
+
+                    enterSecretRoom();
+
+                    return;
+
+                }
+
+
+                /*
+                PÅ ÖVRIGA NIVÅER:
+                DÖDSANIMATION
+                */
+
+                deathAnimation();
+
+                return;
+
+            }
+
+
+            mario.jumping = false;
+
+            mario.velY = 0;
+
+            mario.y =
+                plat.y -
+                mario.height;
+
+        }
+
+    }
+
+
+    /* =================================================
+       SKÄRMBEGRÄNSNING
+    ================================================= */
+
+    if (mario.x < 0)
+        mario.x = 0;
+
+
+    if (
+        mario.x >
+        canvas.width -
+        mario.width
+    ) {
+
+        mario.x =
+            canvas.width -
+            mario.width;
+
+    }
+
+
+    /* =================================================
+       FALL UTANFÖR SKÄRMEN
+    ================================================= */
+
+    if (
+        mario.y >
+        canvas.height + 30
+    ) {
+
+        if (
+            currentLevel === 20
+        ) {
+
+            enterSecretRoom();
+
+        } else {
+
+            deathAnimation();
+
+        }
+
+        return;
+
+    }
+
+
+    /* =================================================
+       MÅL
+    ================================================= */
+
+    if (
+        mario.x <
+            goal.x +
+            goal.width &&
+
+        mario.x +
+            mario.width >
+            goal.x &&
+
+        mario.y <
+            goal.y +
+            goal.height &&
+
+        mario.y +
+            mario.height >
+            goal.y
+    ) {
+
+        nextLevel();
+
+    }
+
+}
+
+
+/* =====================================================
+   RITA
+===================================================== */
+
+function draw() {
+
+    ctx.clearRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+
+    /* =================================================
+       HEMLIGT STENRUM
+    ================================================= */
+
+    if (secretRoom) {
+
+        ctx.fillStyle = "#252525";
+
+        ctx.fillRect(
+            0,
+            0,
+            canvas.width,
+            canvas.height
+        );
+
+
+        /*
+        STENVÄGG
+        */
+
+        ctx.strokeStyle = "#555";
+
+        ctx.lineWidth = 3;
+
+        for (
+            let y = 0;
+            y < 400;
+            y += 40
+        ) {
+
+            for (
+                let x = 0;
+                x < 800;
+                x += 80
+            ) {
+
+                ctx.strokeRect(
+                    x,
+                    y,
+                    80,
+                    40
+                );
+
+            }
+
+        }
+
+
+        let stonePlatforms = [
+
+            {
+                x: 0,
+                y: 345,
+                width: 150,
+                height: 55
+            },
+
+            {
+                x: 190,
+                y: 290,
+                width: 80,
+                height: 20
+            },
+
+            {
+                x: 310,
+                y: 240,
+                width: 80,
+                height: 20
+            },
+
+            {
+                x: 430,
+                y: 190,
+                width: 80,
+                height: 20
+            },
+
+            {
+                x: 550,
+                y: 240,
+                width: 80,
+                height: 20
+            },
+
+            {
+                x: 680,
+                y: 150,
+                width: 120,
+                height: 20
+            }
+
+        ];
+
+
+        for (
+            let p of stonePlatforms
+        ) {
+
+            ctx.fillStyle = "#777";
+
+            ctx.fillRect(
+                p.x,
+                p.y,
+                p.width,
+                p.height
+            );
+
+            ctx.strokeStyle = "#111";
+
+            ctx.strokeRect(
+                p.x,
+                p.y,
+                p.width,
+                p.height
+            );
+
+        }
+
+
+        /*
+        TROFÉ
+        */
+
+        ctx.font = "55px Arial";
+
+        ctx.fillText(
+            "🏆",
+            715,
+            115
+        );
+
+
+    } else {
+
+
+        /* =================================================
+           COOL BAKGRUND
+        ================================================= */
+
+        if (
+            backgroundImage.complete &&
+            backgroundImage.naturalWidth > 0
+        ) {
+
+            /*
+            Fyll hela spelrutan med grun.png
+            */
+
+            let imageRatio =
+                backgroundImage.naturalWidth /
+                backgroundImage.naturalHeight;
+
+            let canvasRatio =
+                canvas.width /
+                canvas.height;
+
+            let drawWidth;
+            let drawHeight;
+
+            if (
+                imageRatio >
+                canvasRatio
+            ) {
+
+                drawHeight =
+                    canvas.height;
+
+                drawWidth =
+                    drawHeight *
+                    imageRatio;
+
+            } else {
+
+                drawWidth =
+                    canvas.width;
+
+                drawHeight =
+                    drawWidth /
+                    imageRatio;
+
+            }
+
+            let drawX =
+                (canvas.width -
+                    drawWidth) / 2;
+
+            let drawY =
+                (canvas.height -
+                    drawHeight) / 2;
+
+            ctx.drawImage(
+                backgroundImage,
+                drawX,
+                drawY,
+                drawWidth,
+                drawHeight
+            );
+
+        } else {
+
+            /*
+            Reservbakgrund om grun.png
+            saknas
+            */
+
+            ctx.fillStyle =
+                "#090020";
+
+            ctx.fillRect(
+                0,
+                0,
+                canvas.width,
+                canvas.height
+            );
+
+        }
+
+
+        /* =================================================
+           MÖRK OVERLAY
+        ================================================= */
+
+        ctx.fillStyle =
+            "rgba(0,0,20,0.25)";
+
+        ctx.fillRect(
+            0,
+            0,
+            canvas.width,
+            canvas.height
+        );
+
+
+        /* =================================================
+           PLATTFORMAR
+        ================================================= */
+
+        for (
+            let plat of platforms
+        ) {
+
+            ctx.fillStyle =
+                plat.color;
+
+            ctx.fillRect(
+                plat.x,
+                plat.y,
+                plat.width,
+                plat.height
+            );
+
+            ctx.strokeStyle =
+                "#000";
+
+            ctx.lineWidth = 2;
+
+            ctx.strokeRect(
+                plat.x,
+                plat.y,
+                plat.width,
+                plat.height
+            );
+
+        }
+
+
+        /* =================================================
+           LAVA
+        ================================================= */
+
+        ctx.fillStyle =
+            "#e74c3c";
+
+        ctx.fillRect(
+            0,
+            380,
+            800,
+            20
+        );
+
+
+        ctx.fillStyle =
+            "#ff9f43";
+
+        for (
+            let x = 0;
+            x < 800;
+            x += 40
+        ) {
+
+            ctx.beginPath();
+
+            ctx.arc(
+                x + 20,
+                380,
+                10,
+                Math.PI,
+                0
+            );
+
+            ctx.fill();
+
+        }
+
+
+        /* =================================================
+           MÅL
+        ================================================= */
+
+        ctx.fillStyle =
+            goal.color;
+
+        ctx.fillRect(
+            goal.x,
+            goal.y,
+            goal.width,
+            goal.height
+        );
+
+
+        ctx.fillStyle =
+            "white";
+
+        ctx.fillRect(
+            goal.x + 10,
+            goal.y - 10,
+            10,
+            10
+        );
+
+    }
+
+
+    /* =================================================
+       MARIO
+    ================================================= */
+
+    if (
+        marioImage.complete &&
+        marioImage.naturalWidth > 0
+    ) {
+
+        ctx.drawImage(
+            marioImage,
+            mario.x,
+            mario.y,
+            mario.width,
+            mario.height
+        );
+
+    } else {
+
+        ctx.fillStyle =
+            "red";
+
+        ctx.fillRect(
+            mario.x,
+            mario.y,
+            mario.width,
+            mario.height
+        );
+
+    }
+
+}
+
+
+/* =====================================================
+   GAME LOOP
+===================================================== */
+
+function gameLoop() {
+
+    update();
+
+    draw();
+
+    requestAnimationFrame(
+        gameLoop
+    );
+
+}
+
+
+/* =====================================================
+   STARTA SPELET
+===================================================== */
+
+function startGame() {
+
+    if (gameStarted)
+        return;
+
+    gameStarted = true;
+
+    /*
+    HASTIGHET ALLTID 7
+    */
+
+    updateSpeed();
+
+    updateGoalPosition();
+
+    platforms =
+        [...levels[currentLevel], lavaFloor];
+
+    resetPlayer();
+
+    gameLoop();
+
+}
+
+
+passwordInput.focus();
+
+</script>
+
+</body>
+</html>
